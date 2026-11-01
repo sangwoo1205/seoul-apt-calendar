@@ -3,6 +3,7 @@ from datetime import timedelta
 import hashlib
 import json
 import re
+import sys
 import time
 from urllib.error import HTTPError, URLError
 from urllib.parse import unquote, urlencode
@@ -139,8 +140,23 @@ def normalize_notice(row, detail, core, counts):
     # 접수처(dsCtrtPlc)의 주소는 LH 사무소 주소이므로 절대로 지역 판정에 사용하지 않음.
     complexes = detail.get('dsSbd')
     schedules = detail.get('dsSplScdl')
+    # 성공 응답이라도 공고에 따라 dataset이 없거나 null일 수 있다.
+    # 주소 없는 공고는 지역을 추측하지 않고 확인 대상으로 집계한다.
+    missing = [key for key in ('dsSbd', 'dsSplScdl') if detail.get(key) is None]
+    if missing:
+        counts['lh_incomplete_detail_notices'] += 1
+        if counts['lh_incomplete_detail_notices'] <= 20:
+            print('LH 확인 필요: ' + str(row.get('PAN_ID', '')) +
+                  ' / 누락=' + ','.join(missing) +
+                  ' / 반환항목=' + ','.join(sorted(detail)), file=sys.stderr)
+    if complexes is None or complexes == []:
+        counts['lh_missing_complex_info'] += 1
+        return []
+    if schedules is None:
+        counts['lh_missing_schedule_info'] += 1
+        schedules = []
     if not isinstance(complexes, list) or not isinstance(schedules, list):
-        raise core.BuildError('LH: 단지정보/공급일정 dataset 구조 오류.')
+        raise core.BuildError('LH: 단지정보/공급일정 dataset 형식 오류. PAN_ID=' + str(row.get('PAN_ID', '')))
     events = []
     for complex_ in complexes:
         address = str(complex_.get('LCT_ARA_ADR') or '').strip()
@@ -159,7 +175,8 @@ def normalize_notice(row, detail, core, counts):
                 'name': name, 'address': address, 'supply': 'LH 공공분양',
                 'url': core.official_url(str(row.get('DTL_URL') or '').strip()),
                 'source': 'LH 청약플러스 공식 API',
-                'note': '공고: ' + str(row.get('PAN_NM') or '') + '\n공고 공통일정입니다. 단지별 적용과 정확한 접수시간은 원문 확인.'}
+                'note': '공고: ' + str(row.get('PAN_NM') or '') + '\n공고 공통일정입니다. 단지별 적용과 정확한 접수시간은 원문 확인.' +
+                        ('\nAPI가 공급일정을 제공하지 않아 공고일만 표시합니다.' if not schedules else '')}
         core.add_event(events, base, 'notice', 'LH 모집공고', normalized_date(row.get('PAN_NT_ST_DT'), core.day))
         groups, winners = {}, set()
         for schedule in schedules:
@@ -191,6 +208,8 @@ def collect(key, today, core, counts, request=request_json, pause=time.sleep):
     rows = list_notices(key, today, core.BuildError, request, pause)
     counts['lh_fetched_notices'] = len(rows)
     events = []
+    attempted = 0
+    missing_before = counts['lh_missing_complex_info']
     for row in rows:
         if not sale_candidate(row):
             counts['lh_excluded_type'] += 1
@@ -204,7 +223,16 @@ def collect(key, today, core, counts, request=request_json, pause=time.sleep):
             if not row.get(field):
                 raise core.BuildError('LH: 상세 조회 식별자 누락.')
             params[field] = row[field]
+        if row.get('AIS_TP_CD'):
+            params['AIS_TP_CD'] = row['AIS_TP_CD']
         detail = request(DETAIL_URL, params, key, core.BuildError)
+        attempted += 1
         events.extend(normalize_notice(row, detail, core, counts))
         pause(0.15)
+    if attempted and counts['lh_missing_complex_info'] - missing_before == attempted:
+        raise core.BuildError('LH: 조회한 모든 후보 공고에 단지정보가 없습니다. 확인 필요 로그를 점검하세요.')
+    print('LH 수집 요약: 상세조회=' + str(attempted) +
+          ', 단지정보없음=' + str(counts['lh_missing_complex_info']) +
+          ', 공급일정없음=' + str(counts['lh_missing_schedule_info']) +
+          ', 생성일정=' + str(len(events)))
     return events
