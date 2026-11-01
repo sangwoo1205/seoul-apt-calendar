@@ -1,0 +1,11 @@
+{
+  "mode": "demo",
+  "updated_at": "2026-11-01T11:34:07.100584+00:00",
+  "event_count": 8,
+  "counts": {
+    "getAPTLttotPblancDetail_fetched": 1,
+    "included_notices": 2,
+    "getRemndrLttotPblancDetail_fetched": 1
+  },
+  "coverage": "청약홈 APT/잔여세대 + 공식 원문 수동 입력. LH/SH/GH 자체 공고 전수 자동수집 아님."
+}

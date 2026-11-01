@@ -1,0 +1,708 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "version": "1",
+    "title": "청약홈 분양정보 조회 서비스",
+    "description": "한국부동산원 '청약홈'에서 제공하는 분양정보 조회 서비스로 APT(민간사전청약 및 신혼희망타운 포함), 오피스텔/도시형/민간임대/생활숙박시설, APT 무순위/잔여세대, 공공지원 민간임대, 임의공급의 분양정보 데이터를 제공합니다.\n\n※ 관련 기술문서는 아래 URL을 통해 확인하시기 바랍니다.\nhttps://www.reb.or.kr/reb/na/ntt/selectNttInfo.do?mi=10251&bbsId=1268&nttSn=79889\n-----------------------------------------------------------------------------\n ** EQ(Equal) : =\n ** LT(Little) : <\n ** LTE(Little or Equal) : <=\n ** GT(Greater) : >\n ** GTE(Greater or Equal) : >=\n (모집공고일 : 22년 1월 1일 ~ 22년 1월 31일 (GTE(2022-01-01) <= 모집공고일 <= LTE(2022-01-31)))"
+  },
+  "host": "api.odcloud.kr",
+  "basePath": "/api",
+  "schemes": [
+    "https",
+    "http"
+  ],
+  "securityDefinitions": {
+    "ApiKeyAuth": {
+      "type": "apiKey",
+      "in": "header",
+      "name": "Authorization"
+    },
+    "ApiKeyAuth2": {
+      "type": "apiKey",
+      "in": "query",
+      "name": "serviceKey"
+    }
+  },
+  "paths": {
+    "/ApplyhomeInfoDetailSvc/v1/getAPTLttotPblancDetail": {
+      "get": {
+        "tags": [
+          "API 목록"
+        ],
+        "summary": "APT 분양정보 상세조회",
+        "operationId": "getgetAPTLttotPblancDetail",
+        "description": "주택관리번호, 공고번호, 공급지역명, 모집공고일 값을 이용하여 APT 분양정보의 상세정보를 제공",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "page index",
+            "type": "integer",
+            "format": "int64",
+            "exclusiveMinimum": false,
+            "default": 1
+          },
+          {
+            "name": "perPage",
+            "in": "query",
+            "description": "page size",
+            "type": "integer",
+            "format": "int64",
+            "exclusiveMinimum": false,
+            "default": 10
+          },
+          {
+            "name": "returnType",
+            "in": "query",
+            "description": "응답의 데이터 타입을 선택할 수 있습니다. (기본값: JSON)<br/>XML형태의 응답결과를 얻기 위해서는 XML 값으로 설정",
+            "type": "string",
+            "exclusiveMinimum": false
+          },
+          {
+            "name": "cond[HOUSE_MANAGE_NO::EQ]",
+            "in": "query",
+            "description": "주택관리번호",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[PBLANC_NO::EQ]",
+            "in": "query",
+            "description": "공고번호",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[HOUSE_NM::LIKE]",
+            "in": "query",
+            "description": "주택명",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[HOUSE_SECD::EQ]",
+            "in": "query",
+            "description": "주택구분코드(01: APT, 09: 민간사전청약, 10: 신혼희망타운)",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[HOUSE_DTL_SECD::EQ]",
+            "in": "query",
+            "description": "주택상세구분코드(01: 민영, 03: 국민)",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[SUBSCRPT_AREA_CODE::EQ]",
+            "in": "query",
+            "description": "공급지역코드",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[SUBSCRPT_AREA_CODE_NM::EQ]",
+            "in": "query",
+            "description": "공급지역명",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[HSSPLY_ADRES::LIKE]",
+            "in": "query",
+            "description": "공급위치",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[RCRIT_PBLANC_DE::LT]",
+            "in": "query",
+            "description": null,
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[RCRIT_PBLANC_DE::LTE]",
+            "in": "query",
+            "description": null,
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[RCRIT_PBLANC_DE::GT]",
+            "in": "query",
+            "description": null,
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[RCRIT_PBLANC_DE::GTE]",
+            "in": "query",
+            "description": null,
+            "type": "string",
+            "format": "string",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "성공적으로 수행 됨",
+            "schema": {
+              "$ref": "#/definitions/getAPTLttotPblancDetail_api"
+            }
+          },
+          "401": {
+            "description": "인증 정보가 정확 하지 않음"
+          },
+          "500": {
+            "description": "API 서버에 문제가 발생하였음"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyAuth2": []
+          }
+        ]
+      }
+    },
+    "/ApplyhomeInfoDetailSvc/v1/getRemndrLttotPblancDetail": {
+      "get": {
+        "tags": [
+          "API 목록"
+        ],
+        "summary": "APT 잔여세대 분양정보 상세조회",
+        "operationId": "getgetRemndrLttotPblancDetail",
+        "description": "주택관리번호, 공고번호, 주택구분코드, 모집공고일 값을 이용하여 APT 잔여세대 분양정보의 상세 정보를 제공",
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "page index",
+            "type": "integer",
+            "format": "int64",
+            "exclusiveMinimum": false,
+            "default": 1
+          },
+          {
+            "name": "perPage",
+            "in": "query",
+            "description": "page size",
+            "type": "integer",
+            "format": "int64",
+            "exclusiveMinimum": false,
+            "default": 10
+          },
+          {
+            "name": "returnType",
+            "in": "query",
+            "description": "응답의 데이터 타입을 선택할 수 있습니다. (기본값: JSON)<br/>XML형태의 응답결과를 얻기 위해서는 XML 값으로 설정",
+            "type": "string",
+            "exclusiveMinimum": false
+          },
+          {
+            "name": "cond[HOUSE_MANAGE_NO::EQ]",
+            "in": "query",
+            "description": "주택관리번호",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[PBLANC_NO::EQ]",
+            "in": "query",
+            "description": "공고번호",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[HOUSE_NM::LIKE]",
+            "in": "query",
+            "description": "주택명",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[HOUSE_SECD::EQ]",
+            "in": "query",
+            "description": "주택구분코드 (04: 무순위 , 06: 불법행위 재공급)",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[SUBSCRPT_AREA_CODE::EQ]",
+            "in": "query",
+            "description": "공급지역코드",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[HSSPLY_ADRES::LIKE]",
+            "in": "query",
+            "description": "공급위치",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[RCRIT_PBLANC_DE::LT]",
+            "in": "query",
+            "description": "모집공고일 (YYYY-MM-DD)",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[RCRIT_PBLANC_DE::LTE]",
+            "in": "query",
+            "description": "모집공고일 (YYYY-MM-DD)",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[RCRIT_PBLANC_DE::GT]",
+            "in": "query",
+            "description": "모집공고일 (YYYY-MM-DD)",
+            "type": "string",
+            "format": "string",
+            "required": false
+          },
+          {
+            "name": "cond[RCRIT_PBLANC_DE::GTE]",
+            "in": "query",
+            "description": "모집공고일 (YYYY-MM-DD)",
+            "type": "string",
+            "format": "string",
+            "required": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "성공적으로 수행 됨",
+            "schema": {
+              "$ref": "#/definitions/getRemndrLttotPblancDetail_api"
+            }
+          },
+          "401": {
+            "description": "인증 정보가 정확 하지 않음"
+          },
+          "500": {
+            "description": "API 서버에 문제가 발생하였음"
+          }
+        },
+        "security": [
+          {
+            "ApiKeyAuth": []
+          },
+          {
+            "ApiKeyAuth2": []
+          }
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "getAPTLttotPblancDetail_model": {
+      "type": "object",
+      "properties": {
+        "HOUSE_MANAGE_NO": {
+          "type": "string",
+          "description": "주택관리번호"
+        },
+        "PBLANC_NO": {
+          "type": "string",
+          "description": "공고번호"
+        },
+        "HOUSE_NM": {
+          "type": "string",
+          "description": "주택명"
+        },
+        "HOUSE_SECD": {
+          "type": "string",
+          "description": "주택구분코드(01: APT, 09: 민간사전청약, 10: 신혼희망타운)"
+        },
+        "HOUSE_SECD_NM": {
+          "type": "string",
+          "description": "주택구분코드명"
+        },
+        "HOUSE_DTL_SECD": {
+          "type": "string",
+          "description": "주택상세구분코드(01: 민영, 03: 국민)"
+        },
+        "HOUSE_DTL_SECD_NM": {
+          "type": "string",
+          "description": "주택상세구분코드명"
+        },
+        "RENT_SECD": {
+          "type": "string",
+          "description": "분양구분코드(0: 분양주택, 1: 분양전환 가능임대)"
+        },
+        "RENT_SECD_NM": {
+          "type": "string",
+          "description": "분양구분코드명"
+        },
+        "SUBSCRPT_AREA_CODE": {
+          "type": "string",
+          "description": "공급지역코드"
+        },
+        "SUBSCRPT_AREA_CODE_NM": {
+          "type": "string",
+          "description": "공급지역명"
+        },
+        "HSSPLY_ZIP": {
+          "type": "string",
+          "description": "공급위치 우편번호"
+        },
+        "HSSPLY_ADRES": {
+          "type": "string",
+          "description": "공급위치"
+        },
+        "TOT_SUPLY_HSHLDCO": {
+          "type": "integer",
+          "description": "공급규모"
+        },
+        "RCRIT_PBLANC_DE": {
+          "type": "string",
+          "description": ""
+        },
+        "NSPRC_NM": {
+          "type": "string",
+          "description": "신문사"
+        },
+        "RCEPT_BGNDE": {
+          "type": "string",
+          "description": "청약접수시작일 (YYYY-MM-DD)"
+        },
+        "RCEPT_ENDDE": {
+          "type": "string",
+          "description": "청약접수종료일 (YYYY-MM-DD)"
+        },
+        "SPSPLY_RCEPT_BGNDE": {
+          "type": "string",
+          "description": "특별공급 접수시작일 (YYYY-MM-DD)"
+        },
+        "SPSPLY_RCEPT_ENDDE": {
+          "type": "string",
+          "description": "특별공급 접수종료일 (YYYY-MM-DD)"
+        },
+        "GNRL_RNK1_CRSPAREA_RCPTDE": {
+          "type": "string",
+          "description": "1순위 해당지역 접수시작일 (YYYY-MM-DD)"
+        },
+        "GNRL_RNK1_CRSPAREA_ENDDE": {
+          "type": "string",
+          "description": "1순위 해당지역 접수종료일 (YYYY-MM-DD)"
+        },
+        "GNRL_RNK1_ETC_GG_RCPTDE": {
+          "type": "string",
+          "description": "1순위 경기지역 접수시작일 (YYYY-MM-DD)"
+        },
+        "GNRL_RNK1_ETC_GG_ENDDE": {
+          "type": "string",
+          "description": "1순위 경기지역 접수종료일 (YYYY-MM-DD)"
+        },
+        "GNRL_RNK1_ETC_AREA_RCPTDE": {
+          "type": "string",
+          "description": "1순위 기타지역 접수시작일 (YYYY-MM-DD)"
+        },
+        "GNRL_RNK1_ETC_AREA_ENDDE": {
+          "type": "string",
+          "description": "1순위 기타지역 접수종료일 (YYYY-MM-DD)"
+        },
+        "GNRL_RNK2_CRSPAREA_RCPTDE": {
+          "type": "string",
+          "description": "2순위 해당지역 접수시작일 (YYYY-MM-DD)"
+        },
+        "GNRL_RNK2_CRSPAREA_ENDDE": {
+          "type": "string",
+          "description": "2순위 해당지역 접수종료일 (YYYY-MM-DD)"
+        },
+        "GNRL_RNK2_ETC_GG_RCPTDE": {
+          "type": "string",
+          "description": "2순위 경기지역 접수시작일 (YYYY-MM-DD)"
+        },
+        "GNRL_RNK2_ETC_GG_ENDDE": {
+          "type": "string",
+          "description": "2순위 경기지역 접수종료일 (YYYY-MM-DD)"
+        },
+        "GNRL_RNK2_ETC_AREA_RCPTDE": {
+          "type": "string",
+          "description": "2순위 기타지역 접수시작일 (YYYY-MM-DD)"
+        },
+        "GNRL_RNK2_ETC_AREA_ENDDE": {
+          "type": "string",
+          "description": "2순위 기타지역 접수종료일 (YYYY-MM-DD)"
+        },
+        "PRZWNER_PRESNATN_DE": {
+          "type": "string",
+          "description": "당첨자발표일 (YYYY-MM-DD)"
+        },
+        "CNTRCT_CNCLS_BGNDE": {
+          "type": "string",
+          "description": "계약시작일 (YYYY-MM-DD)"
+        },
+        "CNTRCT_CNCLS_ENDDE": {
+          "type": "string",
+          "description": "계약종료일 (YYYY-MM-DD)"
+        },
+        "HMPG_ADRES": {
+          "type": "string",
+          "description": "홈페이지주소"
+        },
+        "CNSTRCT_ENTRPS_NM": {
+          "type": "string",
+          "description": "건설업체명(시공사)"
+        },
+        "MDHS_TELNO": {
+          "type": "string",
+          "description": "문의처"
+        },
+        "BSNS_MBY_NM": {
+          "type": "string",
+          "description": "사업주체명(시행사)"
+        },
+        "MVN_PREARNGE_YM": {
+          "type": "string",
+          "description": "입주예정월"
+        },
+        "SPECLT_RDN_EARTH_AT": {
+          "type": "string",
+          "description": "투기과열지구"
+        },
+        "MDAT_TRGET_AREA_SECD": {
+          "type": "string",
+          "description": "조정대상지역 (Y: 과열지역,  N: 미대상주택)"
+        },
+        "PARCPRC_ULS_AT": {
+          "type": "string",
+          "description": "분양가상한제"
+        },
+        "IMPRMN_BSNS_AT": {
+          "type": "string",
+          "description": "정비사업"
+        },
+        "PUBLIC_HOUSE_EARTH_AT": {
+          "type": "string",
+          "description": "공공주택지구"
+        },
+        "LRSCL_BLDLND_AT": {
+          "type": "string",
+          "description": "대규모 택지개발지구"
+        },
+        "NPLN_PRVOPR_PUBLIC_HOUSE_AT": {
+          "type": "string",
+          "description": "수도권 내 민영 공공주택지구"
+        },
+        "PUBLIC_HOUSE_SPCLW_APPLC_AT": {
+          "type": "string",
+          "description": "공공주택 특별법 적용 여부"
+        },
+        "PBLANC_URL": {
+          "type": "string",
+          "description": "분양정보 URL"
+        }
+      }
+    },
+    "getAPTLttotPblancDetail_api": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "perPage": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "currentCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "matchCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/getAPTLttotPblancDetail_model"
+          }
+        }
+      }
+    },
+    "getRemndrLttotPblancDetail_model": {
+      "type": "object",
+      "properties": {
+        "HOUSE_MANAGE_NO": {
+          "type": "string",
+          "description": "주택관리번호"
+        },
+        "PBLANC_NO": {
+          "type": "string",
+          "description": "공고번호"
+        },
+        "HOUSE_NM": {
+          "type": "string",
+          "description": "주택명"
+        },
+        "HOUSE_SECD": {
+          "type": "string",
+          "description": "주택구분코드 (04: 무순위 , 06: 불법행위 재공급)"
+        },
+        "HOUSE_SECD_NM": {
+          "type": "string",
+          "description": "주택구분코드명"
+        },
+        "SUBSCRPT_AREA_CODE": {
+          "type": "string",
+          "description": "공급지역코드"
+        },
+        "SUBSCRPT_AREA_CODE_NM": {
+          "type": "string",
+          "description": "공급지역명"
+        },
+        "HSSPLY_ZIP": {
+          "type": "string",
+          "description": "공급위치 우편번호"
+        },
+        "HSSPLY_ADRES": {
+          "type": "string",
+          "description": "공급위치"
+        },
+        "TOT_SUPLY_HSHLDCO": {
+          "type": "integer",
+          "description": "공급규모"
+        },
+        "RCRIT_PBLANC_DE": {
+          "type": "string",
+          "description": "모집공고일 (YYYY-MM-DD)"
+        },
+        "NSPRC_NM": {
+          "type": "string",
+          "description": "신문사"
+        },
+        "SUBSCRPT_RCEPT_BGNDE": {
+          "type": "string",
+          "description": "청약접수시작일"
+        },
+        "SUBSCRPT_RCEPT_ENDDE": {
+          "type": "string",
+          "description": "청약접수종료일"
+        },
+        "SPSPLY_RCEPT_BGNDE": {
+          "type": "string",
+          "description": "특별공급접수시작일"
+        },
+        "SPSPLY_RCEPT_ENDDE": {
+          "type": "string",
+          "description": "특별공급접수종료일"
+        },
+        "GNRL_RCEPT_BGNDE": {
+          "type": "string",
+          "description": "일반공급접수 시작일"
+        },
+        "GNRL_RCEPT_ENDDE": {
+          "type": "string",
+          "description": "일반공급접수 종료일"
+        },
+        "PRZWNER_PRESNATN_DE": {
+          "type": "string",
+          "description": "당첨자발표일"
+        },
+        "CNTRCT_CNCLS_BGNDE": {
+          "type": "string",
+          "description": "계약시작일"
+        },
+        "CNTRCT_CNCLS_ENDDE": {
+          "type": "string",
+          "description": "계약종료일"
+        },
+        "HMPG_ADRES": {
+          "type": "string",
+          "description": "홈페이지주소"
+        },
+        "BSNS_MBY_NM": {
+          "type": "string",
+          "description": "사업주체명(시행사)"
+        },
+        "MDHS_TELNO": {
+          "type": "string",
+          "description": "문의처"
+        },
+        "MVN_PREARNGE_YM": {
+          "type": "string",
+          "description": "입주예정월"
+        },
+        "PBLANC_URL": {
+          "type": "string",
+          "description": "모집공고 URL"
+        }
+      }
+    },
+    "getRemndrLttotPblancDetail_api": {
+      "type": "object",
+      "properties": {
+        "page": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "perPage": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "totalCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "currentCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "matchCount": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/getRemndrLttotPblancDetail_model"
+          }
+        }
+      }
+    }
+  }
+}

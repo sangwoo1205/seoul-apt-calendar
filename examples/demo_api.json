@@ -1,0 +1,36 @@
+{
+  "getAPTLttotPblancDetail": [
+    {
+      "HOUSE_MANAGE_NO": "test-1",
+      "PBLANC_NO": "test-1",
+      "HOUSE_NM": "[합성 테스트 · 실제 공고 아님] 서울 예시 아파트",
+      "HOUSE_SECD": "01",
+      "RENT_SECD": "0",
+      "HSSPLY_ADRES": "서울특별시 강남구 테스트로 1",
+      "RCRIT_PBLANC_DE": "2026-11-01",
+      "SPSPLY_RCEPT_BGNDE": "2026-11-09",
+      "SPSPLY_RCEPT_ENDDE": "2026-11-09",
+      "GNRL_RNK1_CRSPAREA_RCPTDE": "2026-11-10",
+      "GNRL_RNK1_CRSPAREA_ENDDE": "2026-11-10",
+      "PRZWNER_PRESNATN_DE": "2026-11-20"
+    }
+  ],
+  "getRemndrLttotPblancDetail": [
+    {
+      "HOUSE_MANAGE_NO": "test-2",
+      "PBLANC_NO": "test-2",
+      "HOUSE_NM": "[합성 테스트 · 실제 공고 아님] 성남 예시 아파트",
+      "HOUSE_SECD": "06",
+      "RENT_SECD": "0",
+      "HSSPLY_ADRES": "경기도 성남시 분당구 테스트로 1",
+      "RCRIT_PBLANC_DE": "2026-11-01",
+      "SPSPLY_RCEPT_BGNDE": "2026-11-09",
+      "SPSPLY_RCEPT_ENDDE": "2026-11-09",
+      "GNRL_RNK1_CRSPAREA_RCPTDE": "2026-11-10",
+      "GNRL_RNK1_CRSPAREA_ENDDE": "2026-11-10",
+      "PRZWNER_PRESNATN_DE": "2026-11-20",
+      "GNRL_RCEPT_BGNDE": "2026-11-11",
+      "GNRL_RCEPT_ENDDE": "2026-11-12"
+    }
+  ]
+}

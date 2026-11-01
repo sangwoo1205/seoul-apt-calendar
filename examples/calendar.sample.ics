@@ -1,0 +1,180 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//seoul-apt-calendar//KO
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:서울·성남 아파트 분양 청약
+X-WR-TIMEZONE:Asia/Seoul
+BEGIN:VEVENT
+UID:525071757e4a91cae076e2cdb52c8c51074f9700fe8dfbf4b6ab5003c8de11f5@seoul-
+ apt-calendar
+DTSTAMP:20261101T113407Z
+DTSTART;VALUE=DATE:20261101
+DTEND;VALUE=DATE:20261102
+SUMMARY:[합성 테스트 · 실제 공고 아님] 서울 예시 아파트 
+ | 모집공고
+DESCRIPTION:한국부동산원 청약홈 / 민간/공공 APT\n민간/공공
+  APT\n종일 일정이며 실제 접수시간·자격·변경/취소 여
+ 부는 공고 원문을 확인하세요.\nhttps://www.applyhome.co.kr/
+LOCATION:서울특별시 강남구 테스트로 1
+URL:https://www.applyhome.co.kr/
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:d734f2354411bd2531d2fbb2483dca166ab0e5ca4ab8e12229cff3f42e95055d@seoul-
+ apt-calendar
+DTSTAMP:20261101T113407Z
+DTSTART;VALUE=DATE:20261101
+DTEND;VALUE=DATE:20261102
+SUMMARY:[합성 테스트 · 실제 공고 아님] 성남 예시 아파트 
+ | 모집공고
+DESCRIPTION:한국부동산원 청약홈 / 취소 후 재공급(불법행
+ 위 재공급)\n취소 후 재공급(불법행위 재공급)\n종일 일
+ 정이며 실제 접수시간·자격·변경/취소 여부는 공고 원
+ 문을 확인하세요.\nhttps://www.applyhome.co.kr/
+LOCATION:경기도 성남시 분당구 테스트로 1
+URL:https://www.applyhome.co.kr/
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:c5ac12552e662e29ff20a3e4298986b875a3cce4354b668a38265fbb352d65d1@seoul-
+ apt-calendar
+DTSTAMP:20261101T113407Z
+DTSTART;VALUE=DATE:20261109
+DTEND;VALUE=DATE:20261110
+SUMMARY:[합성 테스트 · 실제 공고 아님] 서울 예시 아파트 
+ | 특별공급 접수
+DESCRIPTION:한국부동산원 청약홈 / 민간/공공 APT\n민간/공공
+  APT\n종일 일정이며 실제 접수시간·자격·변경/취소 여
+ 부는 공고 원문을 확인하세요.\nhttps://www.applyhome.co.kr/
+LOCATION:서울특별시 강남구 테스트로 1
+URL:https://www.applyhome.co.kr/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+TRIGGER:-P3D
+ACTION:DISPLAY
+DESCRIPTION:청약 접수 3일 전: [합성 테스트 · 실제 공고 아
+ 님] 서울 예시 아파트
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P1D
+ACTION:DISPLAY
+DESCRIPTION:청약 접수 1일 전: [합성 테스트 · 실제 공고 아
+ 님] 서울 예시 아파트
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:0c0cd64956fe297a8a15db126838012608046ae0a5e18ca36fdbd86a14e74529@seoul-
+ apt-calendar
+DTSTAMP:20261101T113407Z
+DTSTART;VALUE=DATE:20261109
+DTEND;VALUE=DATE:20261110
+SUMMARY:[합성 테스트 · 실제 공고 아님] 성남 예시 아파트 
+ | 특별공급 접수
+DESCRIPTION:한국부동산원 청약홈 / 취소 후 재공급(불법행
+ 위 재공급)\n취소 후 재공급(불법행위 재공급)\n종일 일
+ 정이며 실제 접수시간·자격·변경/취소 여부는 공고 원
+ 문을 확인하세요.\nhttps://www.applyhome.co.kr/
+LOCATION:경기도 성남시 분당구 테스트로 1
+URL:https://www.applyhome.co.kr/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+TRIGGER:-P3D
+ACTION:DISPLAY
+DESCRIPTION:청약 접수 3일 전: [합성 테스트 · 실제 공고 아
+ 님] 성남 예시 아파트
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P1D
+ACTION:DISPLAY
+DESCRIPTION:청약 접수 1일 전: [합성 테스트 · 실제 공고 아
+ 님] 성남 예시 아파트
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:1d021df94d30d92fd8f5b6644497b2fc44218cf887fee49705f77f990acef473@seoul-
+ apt-calendar
+DTSTAMP:20261101T113407Z
+DTSTART;VALUE=DATE:20261110
+DTEND;VALUE=DATE:20261111
+SUMMARY:[합성 테스트 · 실제 공고 아님] 서울 예시 아파트 
+ | 일반 1순위 해당지역 접수
+DESCRIPTION:한국부동산원 청약홈 / 민간/공공 APT\n민간/공공
+  APT\n종일 일정이며 실제 접수시간·자격·변경/취소 여
+ 부는 공고 원문을 확인하세요.\nhttps://www.applyhome.co.kr/
+LOCATION:서울특별시 강남구 테스트로 1
+URL:https://www.applyhome.co.kr/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+TRIGGER:-P3D
+ACTION:DISPLAY
+DESCRIPTION:청약 접수 3일 전: [합성 테스트 · 실제 공고 아
+ 님] 서울 예시 아파트
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P1D
+ACTION:DISPLAY
+DESCRIPTION:청약 접수 1일 전: [합성 테스트 · 실제 공고 아
+ 님] 서울 예시 아파트
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:9cc8e1076a4bfbd20f7958ae944dc33ace5b06bf7073775a5eedf7cef3a427a7@seoul-
+ apt-calendar
+DTSTAMP:20261101T113407Z
+DTSTART;VALUE=DATE:20261111
+DTEND;VALUE=DATE:20261113
+SUMMARY:[합성 테스트 · 실제 공고 아님] 성남 예시 아파트 
+ | 취소 후 재공급(불법행위 재공급) 일반공급 접수
+DESCRIPTION:한국부동산원 청약홈 / 취소 후 재공급(불법행
+ 위 재공급)\n취소 후 재공급(불법행위 재공급)\n종일 일
+ 정이며 실제 접수시간·자격·변경/취소 여부는 공고 원
+ 문을 확인하세요.\nhttps://www.applyhome.co.kr/
+LOCATION:경기도 성남시 분당구 테스트로 1
+URL:https://www.applyhome.co.kr/
+TRANSP:TRANSPARENT
+BEGIN:VALARM
+TRIGGER:-P3D
+ACTION:DISPLAY
+DESCRIPTION:청약 접수 3일 전: [합성 테스트 · 실제 공고 아
+ 님] 성남 예시 아파트
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P1D
+ACTION:DISPLAY
+DESCRIPTION:청약 접수 1일 전: [합성 테스트 · 실제 공고 아
+ 님] 성남 예시 아파트
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:26d1c7669dfb6127897da1a35d1520bd1822bd2cfe68f20788b33b4fa7952e4a@seoul-
+ apt-calendar
+DTSTAMP:20261101T113407Z
+DTSTART;VALUE=DATE:20261120
+DTEND;VALUE=DATE:20261121
+SUMMARY:[합성 테스트 · 실제 공고 아님] 서울 예시 아파트 
+ | 당첨자 발표
+DESCRIPTION:한국부동산원 청약홈 / 민간/공공 APT\n민간/공공
+  APT\n종일 일정이며 실제 접수시간·자격·변경/취소 여
+ 부는 공고 원문을 확인하세요.\nhttps://www.applyhome.co.kr/
+LOCATION:서울특별시 강남구 테스트로 1
+URL:https://www.applyhome.co.kr/
+TRANSP:TRANSPARENT
+END:VEVENT
+BEGIN:VEVENT
+UID:bab4e34825fcc4ba03828eaa590edd70fd5de1cecf527d3f9d96ad216dc98950@seoul-
+ apt-calendar
+DTSTAMP:20261101T113407Z
+DTSTART;VALUE=DATE:20261120
+DTEND;VALUE=DATE:20261121
+SUMMARY:[합성 테스트 · 실제 공고 아님] 성남 예시 아파트 
+ | 당첨자 발표
+DESCRIPTION:한국부동산원 청약홈 / 취소 후 재공급(불법행
+ 위 재공급)\n취소 후 재공급(불법행위 재공급)\n종일 일
+ 정이며 실제 접수시간·자격·변경/취소 여부는 공고 원
+ 문을 확인하세요.\nhttps://www.applyhome.co.kr/
+LOCATION:경기도 성남시 분당구 테스트로 1
+URL:https://www.applyhome.co.kr/
+TRANSP:TRANSPARENT
+END:VEVENT
+END:VCALENDAR
