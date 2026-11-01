@@ -11,7 +11,7 @@ import re
 import sys
 import time
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode, urlsplit
+from urllib.parse import unquote, urlencode, urlsplit
 from urllib.request import Request, urlopen
 
 BASE = 'https://api.odcloud.kr/api/ApplyhomeInfoDetailSvc/v1/'
@@ -61,6 +61,9 @@ def official_url(value):
 
 def fetch(endpoint, key, opener=urlopen, pause=time.sleep):
     """전체 이력을 재조회해 오래된 공고의 일정 변경도 반영. URL/키는 로그에 출력하지 않음."""
+    # 포털에서 Encoding 키만 보이는 경우도 지원. '+'는 키의 일부이므로
+    # 공백으로 바꾸는 unquote_plus 대신 unquote로 한 번만 복원한다.
+    key = unquote(key.strip())
     rows, seen, expected = [], set(), None
     for page in range(1, 501):
         query = urlencode({'page': page, 'perPage': 100, 'returnType': 'JSON', 'serviceKey': key})
@@ -279,7 +282,7 @@ def main():
         else:
             key = os.environ.get('DATA_GO_KR_SERVICE_KEY', '').strip()
             if not key:
-                raise BuildError('DATA_GO_KR_SERVICE_KEY가 없습니다. GitHub Secrets에 Decoding 키를 등록하세요.')
+                raise BuildError('DATA_GO_KR_SERVICE_KEY가 없습니다. GitHub Secrets에 일반 인증키를 등록하세요.')
             raw = {endpoint: fetch(endpoint, key) for endpoint in ENDPOINTS}
             if any(not rows for rows in raw.values()):
                 raise BuildError('전국 전체이력 API가 0건입니다. 비정상 응답 가능성으로 배포를 중단합니다.')
