@@ -159,13 +159,19 @@ def read_browser(today, core):
         browser = p.chromium.launch(headless=True, env=env)
         page = browser.new_page(locale='ko-KR', timezone_id='Asia/Seoul')
         page.set_default_timeout(45000)
+        stage = '공식 게시판 접속'
         try:
             page.goto(LIST_URL, wait_until='domcontentloaded')
+            stage = '주택분양 분류 선택'
+            page.get_by_role('combobox',name='공지분류 선택',exact=True).select_option(label='주택분양')
+            stage = '모집공고 및 기간 선택'
             page.get_by_role('radio',name='모집공고',exact=True).check()
             page.get_by_role('textbox',name='등록기간 시작 년월일 입력. 예) 2021-01-01',exact=True).fill((today-timedelta(days=730)).isoformat())
             page.get_by_role('textbox',name='등록기간 끝 년월일 입력. 예) 2021-01-01',exact=True).fill(today.isoformat())
+            stage = '검색 실행'
             with page.expect_navigation(wait_until='domcontentloaded'):
                 page.get_by_role('link',name='조회',exact=True).click()
+            stage = '주택분양 목록 확인'
             table = page.get_by_role('table',name=LIST_NAME,exact=True)
             table.wait_for()
             total, current, pages = pagination(page.locator('body').inner_text(),core)
@@ -188,8 +194,10 @@ def read_browser(today, core):
                     if not sale_title(title):
                         continue
                     link = page.get_by_role('table',name=LIST_NAME,exact=True).get_by_role('link',name=title,exact=True)
+                    stage = '공고 상세 열기'
                     with page.expect_navigation(wait_until='domcontentloaded'):
                         link.click()
+                    stage = '공고 본문 읽기'
                     notice = page.get_by_role('table',name=title,exact=True).filter(has_text=re.compile(r'등록일\s*[:：]'))
                     notice.wait_for()
                     cells = notice.get_by_role('cell').evaluate_all('(els) => els.map(el => el.innerText)')
@@ -201,6 +209,7 @@ def read_browser(today, core):
                         raise core.BuildError('SH: 공고 고유번호/게시일 확인 불가.')
                     url = page.url.split('?')[0] + '?seq=' + seq
                     raw.append({'seq':seq,'title':title,'body':body,'posted':posted.group(1),'url':url})
+                    stage = '검색 목록으로 복귀'
                     page.go_back(wait_until='domcontentloaded')
                     page.get_by_role('table',name=LIST_NAME,exact=True).wait_for()
                 if number < pages:
@@ -209,6 +218,13 @@ def read_browser(today, core):
             if len(titles) != total or len(titles) != len(set(titles)):
                 raise core.BuildError('SH: 목록 건수/중복 제목 확인 필요. 원문과 대조하세요.')
             return raw, total
+        except core.BuildError:
+            raise
+        except Exception as exc:
+            # 공개 UI의 실패 단계/오류 종류만 남김. 예외 원문·환경·키는 출력하지 않음.
+            codes = re.findall(r'net::ERR_[A-Z_]+|strict mode violation', str(exc))
+            category = type(exc).__name__ + (' / ' + ','.join(sorted(set(codes))) if codes else '')
+            raise core.BuildError('SH: ' + stage + ' 실패 (' + category + ').') from None
         finally:
             browser.close()
 
