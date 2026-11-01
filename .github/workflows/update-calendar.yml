@@ -1,43 +1,26 @@
-name: Update apartment calendar
-
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '0 0 * * *'
-
-permissions:
-  contents: read
-
-concurrency:
-  group: apartment-calendar-pages
-  cancel-in-progress: false
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
-
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
-
       - name: Test
         run: python -m unittest discover -s tests -v
-
+      - name: Install SH browser collector
+        if: ${{ vars.ENABLE_SH == 'true' }}
+        run: |
+          python -m pip install playwright==1.64.1
+          python -m playwright install --with-deps chromium
       - name: Collect official data and generate ICS
         env:
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
           ENABLE_LH: ${{ vars.ENABLE_LH }}
+          ENABLE_SH: ${{ vars.ENABLE_SH }}
         run: python calendar_builder.py --output site
-
       - uses: actions/configure-pages@v5
-
       - uses: actions/upload-pages-artifact@v4
         with:
           path: site
-
   deploy:
     needs: build
     runs-on: ubuntu-latest
