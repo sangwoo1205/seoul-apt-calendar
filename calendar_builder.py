@@ -247,7 +247,125 @@ def render_ics(events, now):
     return ('\r\n'.join(fold(line) for line in lines) + '\r\n').encode('utf-8')
 
 
-def build(output, events, counts, now, mode):
+def previous_site():
+    value = os.environ.get('PREVIOUS_SITE_URL', '').strip()
+    if not value:
+        repo = os.environ.get('GITHUB_REPOSITORY', '')
+        if re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', repo):
+            owner, name = repo.split('/')
+            value = f'https://{owner}.github.io/{name}/'
+    if not value:
+        return ''
+    parts = urlsplit(value)
+    if (parts.scheme != 'https' or not (parts.hostname or '').endswith('.github.io')
+            or parts.username or parts.password or parts.query or parts.fragment
+            or parts.port not in (None, 443)):
+        raise BuildError('이전 캘린더 주소는 공개 GitHub Pages HTTPS 주소여야 합니다.')
+    return value.rstrip('/') + '/'
+
+
+def read_previous(base, filename, opener=None):
+    if not base:
+        return None
+    opener = opener or urlopen
+    try:
+        with opener(Request(base + filename, headers={'Accept': '*/*'}), timeout=20) as response:
+            value = response.read(2_000_001)
+        if len(value) > 2_000_000:
+            return None
+        return value.decode('utf-8')
+    except (OSError, URLError, UnicodeError, TimeoutError):
+        return None
+
+
+def previous_json(base, filename):
+    value = read_previous(base, filename)
+    try:
+        result = json.loads(value) if value is not None else None
+        return result if isinstance(result, dict) else None
+    except (ValueError, TypeError):
+        return None
+
+
+def retained_sh_components(calendar):
+    if calendar is None or 'BEGIN:VCALENDAR' not in calendar or 'END:VCALENDAR' not in calendar:
+        raise BuildError('SH 수집 실패 후 이전 캘린더도 읽지 못했습니다. 일정 보존을 위해 배포를 중단합니다.')
+    result, seen = [], set()
+    blocks = re.findall(r'BEGIN:VEVENT\r?\n.*?\r?\nEND:VEVENT', calendar, re.S)
+    for block in blocks:
+        plain = re.sub(r'\r?\n[ \t]', '', block)
+        if not re.search(r'^DESCRIPTION:SH 공식 홈페이지 자동 수집 /', plain, re.M):
+            continue
+        uid = re.search(r'^UID:([a-f0-9]{64}@seoul-apt-calendar)\r?$', plain, re.M)
+        start = re.search(r'^DTSTART;VALUE=DATE:(\d{8})\r?$', plain, re.M)
+        end = re.search(r'^DTEND;VALUE=DATE:(\d{8})\r?$', plain, re.M)
+        url = re.search(r'^URL:(https?://[^\r\n]+)', plain, re.M)
+        if not all((uid, start, end, url)) or uid.group(1) in seen:
+            raise BuildError('이전 SH 일정 형식/중복 검증 실패. 기존 배포를 유지합니다.')
+        if day(end.group(1)) <= day(start.group(1)):
+            raise BuildError('이전 SH 일정 기간 검증 실패.')
+        official_url(url.group(1))
+        seen.add(uid.group(1))
+        result.append(block.replace('\r\n', '\n').replace('\n', '\r\n') + '\r\n')
+    return result
+
+
+def sh_source_with_fallback(core, counts, collect_sh, now, base, prior):
+    previous_sources = (prior or {}).get('sources', {})
+    previous = previous_sources.get('sh', {}) if isinstance(previous_sources, dict) else {}
+    if not isinstance(previous, dict):
+        previous = {}
+    try:
+        rows, report = collect_sh(core, counts)
+        source_events = manual_events(None, rows)  # SH 수집 결과의 날짜/주소/공식 링크도 이 단계에서 검증
+        health = {'state':'fresh', 'last_success_at':now.isoformat(), 'last_attempt_at':now.isoformat(),
+                  'message':'SH 공식 게시판 수집 성공', 'notify_failure':False,
+                  'house_manage_numbers':sorted({str(row['house_manage_no']) for row in rows if row.get('house_manage_no')}),
+                  'event_ids':sorted({event['id'] for event in source_events}),
+                  'review_count':len(report.get('reviews', []))}
+        return source_events, [], report, health
+    except Exception as exc:
+        # SH만 실패해도 다른 출처의 새 결과는 유지. 원문 예외는 키가 포함될 가능성이 있어 출력하지 않음.
+        message = str(exc) if isinstance(exc, BuildError) else 'SH 수집 결과 검증 실패'
+        calendar = read_previous(base, 'calendar.ics')
+        components = retained_sh_components(calendar)
+        old_counts = (prior or {}).get('counts', {})
+        expected_sh = (len(previous.get('event_ids', [])) or previous.get('retained_event_count', 0)
+                       or (old_counts.get('sh_collected_notices', 0) if isinstance(old_counts, dict) else 0))
+        if expected_sh and not components:
+            raise BuildError('이전 배포에 있던 SH 일정을 복원하지 못했습니다. 기존 배포를 보호합니다.')
+        last_success = previous.get('last_success_at')
+        if not last_success and prior and previous.get('state') != 'stale':
+            last_success = prior.get('updated_at')  # 이전 버전 배포에서 최초 전환
+        old_report = previous_json(base, 'sh_review.json') or {'reviews': []}
+        report = dict(old_report, state='stale', message='SH 수집 실패로 이전 확인 목록을 유지합니다.')
+        health = {'state':'stale', 'last_success_at':last_success, 'last_attempt_at':now.isoformat(),
+                  'message':message,
+                  'notify_failure':previous.get('state') != 'stale' or previous.get('message') != message,
+                  'house_manage_numbers':previous.get('house_manage_numbers', []),
+                  'event_ids':previous.get('event_ids', []), 'retained_event_count':len(components),
+                  'review_count':None}
+        counts['sh_stale'] = 1
+        counts['sh_retained_events'] = len(components)
+        print('::warning::SH 갱신 실패. 마지막 성공 SH 일정을 유지하고 청약홈/LH는 갱신합니다.', file=sys.stderr)
+        return [], components, report, health
+
+
+def write_health_outputs(health):
+    sh = health.get('sh', {})
+    notify = 'true' if sh.get('notify_failure') else 'false'
+    if os.environ.get('GITHUB_OUTPUT'):
+        with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+            output.write('sh_alert=' + notify + '\n')
+    if os.environ.get('GITHUB_STEP_SUMMARY'):
+        with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as summary:
+            summary.write('캘린더 생성 완료. SH 상태: ' + sh.get('state', 'disabled') + '\n')
+            if sh.get('state') == 'stale':
+                summary.write('SH 갱신 실패로 이전 SH 일정을 유지했습니다. 청약홈·LH는 정상 수집 결과를 반영했습니다.\n')
+                summary.write('SH 마지막 성공: ' + str(sh.get('last_success_at') or '확인 불가') + '\n')
+
+
+def build(output, events, counts, now, mode, sources=None, retained_sh=()):
     # 최근 1년의 완료 일정 + 미래 일정. API 수집 자체에는 날짜 제한 없음.
     cutoff = (now.astimezone(timezone(timedelta(hours=9))).date() - timedelta(days=365)).isoformat()
     events = [e for e in events if e['end'] >= cutoff]
@@ -255,21 +373,41 @@ def build(output, events, counts, now, mode):
     if len(identities) != len(set(identities)):
         raise BuildError('중복 일정 ID.')
     data = render_ics(events, now)  # 검증을 마친 후에만 출력
+    current_uids = set(re.findall(r'^UID:([^\r\n]+)', data.decode('utf-8'), re.M))
+    components = []
+    cutoff_date = day(cutoff)
+    for block in retained_sh:
+        plain = re.sub(r'\r?\n[ \t]', '', block)
+        uid = re.search(r'^UID:([^\r\n]+)', plain, re.M).group(1)
+        end = re.search(r'^DTEND;VALUE=DATE:(\d{8})', plain, re.M).group(1)
+        if uid not in current_uids and day(end) > cutoff_date:
+            components.append(block)
+            current_uids.add(uid)
+    data = data.removesuffix(b'END:VCALENDAR\r\n') + ''.join(components).encode('utf-8') + b'END:VCALENDAR\r\n'
+    event_count = len(events) + len(components)
+    sources = sources or {}
+    sh_health = sources.get('sh', {})
+    notice = ''
+    if sh_health.get('state') == 'stale':
+        notice = ('<section role="alert" style="border:2px solid #b45309;padding:16px">'
+                  '<h2>SH 갱신 실패 — 이전 일정 유지 중</h2>'
+                  '<p>청약홈·LH는 새 결과를 반영했습니다. SH 일정은 최신 정보가 아닐 수 있습니다.</p>'
+                  '<p>SH 마지막 성공: ' + html.escape(str(sh_health.get('last_success_at') or '확인 불가')) + '</p></section>')
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
     (output / 'calendar.ics').write_bytes(data)
-    status = {'mode': mode, 'updated_at': now.isoformat(), 'event_count': len(events), 'counts': dict(counts),
+    status = {'mode': mode, 'updated_at': now.isoformat(), 'event_count': event_count, 'counts': dict(counts), 'sources': sources,
               'coverage': '청약홈 + LH(별도 활성화 시 최근 2년 공고) + SH(별도 활성화 시 최근 2년 모집공고 본문) + 수동 공고. GH 전수 자동수집 아님.'}
     (output / 'status.json').write_text(json.dumps(status, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     title = '테스트 예시 — 실제 공고 아님' if mode == 'demo' else '서울·성남 아파트 분양 청약'
     (output / 'index.html').write_text('<!doctype html><html lang="ko"><meta charset="utf-8">'
-        '<meta name="viewport" content="width=device-width"><title>' + title + '</title><body><h1>' + title + '</h1>'
-        '<p><a href="calendar.ics">Apple Calendar 구독용 ICS</a></p><p>최종 수집 성공: ' + html.escape(now.isoformat()) + '</p>'
-        '<p>일정 ' + str(len(events)) + '개. <a href="status.json">수집 상태</a></p>'
+        '<meta name="viewport" content="width=device-width"><title>' + title + '</title><body><h1>' + title + '</h1>' + notice
+        + '<p><a href="calendar.ics">Apple Calendar 구독용 ICS</a></p><p>캘린더 갱신 시각: ' + html.escape(now.isoformat()) + '</p>'
+        '<p>일정 ' + str(event_count) + '개. <a href="status.json">수집 상태</a></p>'
         '<p><a href="sh_review.json">SH 확인 대상(수집 활성화 시)</a></p><p>청약홈 등록 공고와 추가 수집 공고를 제공합니다. LH는 공식 API, SH는 활성화 시 최근 2년 모집공고 본문을 자동 수집합니다. 첨부파일에만 있는 일정과 GH는 포함되지 않을 수 있습니다.</p>'
-        '<p>실제 접수 시간·자격·변경 사항은 공식 모집공고문을 확인하세요. API 장애 시 마지막 성공 결과가 유지됩니다.</p></body></html>', encoding='utf-8')
+        '<p>실제 접수 시간·자격·변경 사항은 공식 모집공고문을 확인하세요. SH 장애 시 마지막 성공 SH 일정을 보존하며 다른 출처는 갱신합니다. 청약홈·LH 수집 실패 시에는 기존 배포가 유지됩니다.</p></body></html>', encoding='utf-8')
     (output / '.nojekyll').touch()
-    return len(events)
+    return event_count
 
 
 def main():
@@ -308,14 +446,22 @@ def main():
             today_kst = datetime.now(timezone(timedelta(hours=9))).date()
             events.extend(collect(key, today_kst, sys.modules[__name__], counts))
         counts['lh_enabled'] = int(lh_enabled and not args.demo)
-        sh_report = None
+        now = datetime.now(timezone.utc)
+        sources = {'applyhome':{'state':'fresh','last_success_at':now.isoformat()},
+                   'lh':{'state':'fresh' if lh_enabled and not args.demo else 'disabled',
+                         'last_success_at':now.isoformat() if lh_enabled and not args.demo else None},
+                   'sh':{'state':'disabled'}}
+        sh_report, retained_sh = None, []
         sh_enabled = os.environ.get('ENABLE_SH', '').strip().lower() == 'true' and not args.demo
         if sh_enabled:
             from sh_source import collect as collect_sh
-            sh_rows, sh_report = collect_sh(sys.modules[__name__], counts)
-            sh_events = manual_events(None, sh_rows)
-            sh_ids = {event['id'] for event in sh_events}
-            manage_numbers = {str(row['house_manage_no']) for row in sh_rows if row.get('house_manage_no')}
+            base = previous_site()
+            prior = previous_json(base, 'status.json')
+            sh_events, retained_sh, sh_report, sh_health = sh_source_with_fallback(
+                sys.modules[__name__], counts, collect_sh, now, base, prior)
+            sources['sh'] = sh_health
+            sh_ids = set(sh_health.get('event_ids', []))
+            manage_numbers = set(sh_health.get('house_manage_numbers', []))
             old_manual_ids = {'manual:sh-312005'} | {'manual:' + row['id'] for row in manual_rows
                               if str(row.get('house_manage_no', '')) in manage_numbers}
             events = [event for event in events
@@ -324,9 +470,10 @@ def main():
                                   for number in manage_numbers)]
             events.extend(sh_events)
         counts['sh_enabled'] = int(sh_enabled)
-        count = build(args.output, events, counts, datetime.now(timezone.utc), 'demo' if args.demo else 'live')
+        count = build(args.output, events, counts, now, 'demo' if args.demo else 'live', sources, retained_sh)
         if sh_report is not None:
             Path(args.output, 'sh_review.json').write_text(json.dumps(sh_report, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
+        write_health_outputs(sources)
         print(f'완료: {count}개 일정 → {args.output}/calendar.ics')
     except BuildError as exc:
         print('생성 실패: ' + str(exc) + ' 기존 배포는 유지됩니다.', file=sys.stderr)
