@@ -1,82 +1,42 @@
-# 서울·성남 아파트 분양 청약 → Apple Calendar
+# 서울·성남 아파트 분양 청약 캘린더
 
-서울 전체와 **성남시 전체(분당·판교·수정구·중원구 포함)**의 분양 청약 일정을 `calendar.ics`로 만드는 프로젝트입니다. Python 3.12 이상, 추가 설치 패키지 없이 실행합니다.
+청약홈과 LH 공식 API, SH 공식 주택분양 모집공고 게시판을 매일 한국시간 오전 9시 목표로 조회하고 Apple Calendar 구독용 ICS를 GitHub Pages에 공개합니다. 서울·성남(분당·판교 포함)의 아파트 분양을 대상으로 일반 임대·분양전환 임대·오피스텔·상가는 제외합니다. 토지임대부 건물 분양은 별도로 표시합니다.
 
-**현재 상태: 업로드용 준비본입니다. API 키 등록·실데이터 수집·GitHub 배포는 아직 하지 않았습니다.** 포함된 예시 일정은 합성 테스트 자료입니다.
+- [캘린더 안내 페이지](https://sangwoo1205.github.io/seoul-apt-calendar/)
+- [Apple Calendar 구독 주소](https://sangwoo1205.github.io/seoul-apt-calendar/calendar.ics)
+- [현재 수집 상태](https://sangwoo1205.github.io/seoul-apt-calendar/status.json)
+- [SH 원문 확인 대상](https://sangwoo1205.github.io/seoul-apt-calendar/sh_review.json)
 
-## 포함하는 것
+## SH 수집에 실패할 때
 
-- 청약홈 APT API의 민영/국민 아파트 분양: 일반공급 1·2순위와 해당/경기/기타 지역 구분, 특별공급.
-- 같은 APT API의 민간사전청약·신혼희망타운도 분양주택으로 분류된 경우 포함.
-- 잔여세대 API의 무순위(`04`), 취소 후 재공급에 해당하는 불법행위 재공급(`06`).
-- 모집공고일, 접수기간, 당첨자 발표일을 종일 일정으로 기록. 접수 일정에는 3일 전·1일 전 알림 포함.
-- 임대·분양전환 임대 제외. 오피스텔·도시형생활주택·공공지원민간임대 API는 호출하지 않음.
-- 공급위치 주소로 지역을 판정. 단지 이름의 '서울/판교'만 보고 넣지 않음. 주소가 없거나 행정구역을 판정할 수 없으면 제외 건수에 집계.
+SH 페이지 변경, 브라우저 설치/실행 실패, 잘못된 SH 일정 데이터가 발생해도 **청약홈·LH의 새 결과는 계속 반영**합니다. SH는 이전에 공개된 `calendar.ics`에서 마지막 성공 SH 일정만 가져와 UID·날짜·내용을 유지합니다. 새 SH 접수일을 추정해 만들지 않습니다.
 
-**공공분양 전수 자동수집은 아닙니다.** 청약홈에 등록된 공공분양을 포함하지만 LH·SH·GH 자체 접수 공고, 청약홈 별도 임의공급 API는 자동 수집하지 않습니다. 해당 공고는 공식 원문을 확인해 `data/manual_notices.json`에 추가할 수 있습니다. 기관별 API 주소를 추측해 넣지 않았습니다.
+안내 페이지에는 **SH 갱신 실패 — 이전 일정 유지 중** 배너와 SH 마지막 성공 시각이 표시됩니다. 전체 캘린더 갱신 시각과 SH 마지막 성공 시각은 따로 관리합니다. 회복하면 새 SH 결과로 교체되고 배너가 사라집니다.
 
-## 3단계 — GitHub에 파일 올리기
+새 SH 오류가 발생하면 **캘린더 배포가 끝난 뒤** 별도 `SH update needs attention (calendar already deployed)` 단계가 실패 상태를 남깁니다. 이때 build와 deploy가 초록색이어도 전체 실행이 빨간색일 수 있습니다. **캘린더 갱신은 완료됐고 SH에만 확인이 필요하다는 뜻**입니다. 같은 오류가 계속되면 알림을 반복하지 않고, 오류 원인이 바뀌거나 회복 후 다시 실패하면 새로 알립니다.
 
-1. ZIP을 내려받아 압축을 풉니다. `seoul-apt-calendar` 폴더를 엽니다.
-2. GitHub의 기존 `seoul-apt-calendar` 저장소 → **Code → Add file → Upload files**를 선택합니다.
-3. 폴더 자체가 아니라 **폴더 안의 내용물**을 올립니다. `calendar_builder.py`, `README.md`, `data`, `docs`, `examples`, `tests`를 끌어놓으세요. 기존 README는 이 파일로 교체합니다.
-4. **Commit changes**를 눌러 기본 브랜치에 저장합니다. 업로드 후 최상위에 `calendar_builder.py`가 보여야 합니다. `seoul-apt-calendar/seoul-apt-calendar/...`로 중첩되면 잘못 올라간 것입니다.
-5. 숨김 파일 `.gitignore`도 올립니다. Mac Finder에서 **Command+Shift+.**로 숨김 파일을 표시하거나, GitHub **Add file → Create new file**에서 파일 이름 `.gitignore`로 만들고 제공 파일 내용을 복사합니다.
-6. `.github/workflows/update-calendar.yml`도 필요합니다. 웹 업로드에서 숨김 폴더가 빠졌다면 **Add file → Create new file**에서 파일 이름에 정확히 `.github/workflows/update-calendar.yml`을 입력하고, ZIP에 든 동일 파일의 전체 내용을 붙여넣은 뒤 저장합니다. **경로와 파일명이 핵심입니다.** Finder에서 숨김 파일을 표시하면 제공 파일을 열 수 있습니다.
+이전 캘린더까지 읽지 못해 SH 일정을 보존할 수 없으면 예외적으로 새 배포를 중단해 기존 공개 일정을 보호합니다. 청약홈·LH 자체 수집 실패도 기존 정책대로 전체 새 배포를 중단합니다.
 
-3단계는 여기까지입니다. 인증키는 파일·대화·README에 적지 마세요. 자동 실행 설정 파일은 수동 실행과 예약 실행만 포함하여, 업로드 직후 push로 배포되지는 않습니다.
+## GitHub 알림 받기
 
-## 4단계 — API 키와 자동 실행·Pages 설정
+GitHub 계정의 [알림 설정](https://github.com/settings/notifications)에서 **System → Actions**의 수신 경로를 **On GitHub** 또는 **Email**로 선택하고, **Only notify for failed workflows**를 선택한 뒤 저장합니다. 이 저장소의 Watch 설정도 확인하세요. 예약 실행 알림의 수신자는 GitHub의 실행자/예약 수정자 규칙에 따릅니다.
 
-1. [공공데이터포털 공식 서비스](https://www.data.go.kr/data/15098547/openapi.do)에서 **한국부동산원_청약홈 분양정보 조회 서비스** 활용신청을 합니다. 내 계정의 승인 상태와 호출 한도를 확인합니다.
-2. 발급된 **일반 인증키(Decoding)**를 복사합니다. Encoding 키를 넣지 마세요. 프로그램이 URL 인코딩을 처리합니다.
-3. GitHub 저장소 → **Settings → Secrets and variables → Actions → New repository secret**.
-   - Name: `DATA_GO_KR_SERVICE_KEY`
-   - Secret: 본인의 Decoding 인증키
-4. 저장소 → **Settings → Pages → Build and deployment → Source: GitHub Actions**로 선택합니다. branch 배포는 선택하지 않습니다.
-5. **Actions → Update apartment calendar → Run workflow → Run workflow**를 누릅니다. Actions 활성화 안내가 있으면 허용합니다.
-6. `build`, `deploy`가 모두 초록색인지 확인합니다. 배포 결과의 사이트 주소를 열어 **최종 수집 성공 시각**, 일정 개수, `status.json`의 `mode: live`를 확인합니다. 합성 예시가 운영 사이트에 올라가면 안 됩니다.
+프로그램은 별도 이메일 비밀번호나 새 API 키를 요구하지 않습니다. 계정의 알림 수신 설정을 자동 변경하지 않습니다. 실제 이메일 수신은 본인 GitHub 알림 설정과 메일함에서 확인해야 합니다.
 
-매일 한국시간 **오전 9시 목표**로 실행합니다(`0 0 * * *`, UTC). GitHub 사정에 따라 지연/누락될 수 있습니다. 기본 브랜치에 파일이 있어야 하며, 공개 저장소는 60일 동안 활동이 없으면 예약 실행이 비활성화될 수 있으므로 주기적으로 Actions를 확인합니다. 수동 실행도 가능합니다.
+공식 안내: [GitHub Actions 알림 관리](https://docs.github.com/en/subscriptions-and-notifications/how-tos/managing-github-actions-notifications), [실행 알림 대상](https://docs.github.com/en/actions/concepts/workflows-and-actions/notifications-for-workflow-runs).
 
-실패 시 새 Pages 배포를 하지 않아 이전 성공 결과가 유지됩니다. 사이트의 마지막 성공 시각은 오래된 데이터인지 판단하는 기준입니다. GitHub 계정 알림 설정에서 Actions 실패 알림도 켜 두세요. 자동으로 재시도하는 것은 HTTP 429/일시적 서버·네트워크 오류에 한해 최대 3회입니다.
+## 설정 유지
 
-## 5단계 — Apple Calendar 구독
+- Secret: `DATA_GO_KR_SERVICE_KEY` — 공공데이터포털 일반 인증키. Encoding/Decoding 둘 다 지원.
+- Variables: `ENABLE_LH=true`, `ENABLE_SH=true`.
+- Pages 배포 Source: GitHub Actions.
+- 수동 실행: Actions → Update apartment calendar → Run workflow.
+- Apple Calendar 주소는 기존과 같으므로 다시 구독하지 않습니다.
 
-배포가 성공하면 실제 주소는 보통 다음 형태입니다. **`YOUR_GITHUB_USERNAME`은 본인 GitHub 사용자 이름으로 바꾸세요. 아직 만들어진 주소가 아닙니다.** GitHub 배포 화면의 실제 URL을 우선 사용하세요.
+## 수집 범위와 한계
 
-```text
-https://YOUR_GITHUB_USERNAME.github.io/seoul-apt-calendar/calendar.ics
-```
+청약홈은 APT/잔여세대 API를 사용합니다. LH는 최근 730일 공고의 상세 단지주소와 공급일정을 확인합니다. SH는 최근 730일 주택분양 모집공고의 **본문**에서 읽을 수 있는 일정만 자동 추출하며, 첨부파일에만 있는 일정이나 새 사업지의 지역을 판단하지 못한 공고는 확인 대상으로 남깁니다. GH 및 모든 기관 공고 전수 수집은 아닙니다.
 
-Mac 캘린더 → **파일 → 새로운 캘린더 구독** → 위 주소 입력 → 구독 → 위치를 iCloud로 선택할 수 있으면 선택 → 자동 새로 고침 간격 설정. 메뉴명은 OS 버전에 따라 다를 수 있습니다. 파일 다운로드 후 가져오기는 일회성 복사이므로 **URL 구독**을 사용합니다. iPhone에서는 설정에서 '구독 캘린더 추가'를 검색해 같은 주소를 넣을 수도 있습니다.
+지역·유형·날짜·자격은 최종적으로 공식 원문을 확인하세요. 같은 주택관리번호의 청약홈/SH 중복은 조정하지만 LH와의 모든 중복을 자동 연결하지는 않습니다. 접수 일정은 종일이며 3일 전·1일 전 알림을 포함합니다. GitHub 예약 실행과 Apple Calendar 갱신에는 지연이 있을 수 있습니다.
 
-종일 접수 시작일 기준 `-P3D`, `-P1D` 알림입니다. 정확한 접수 시작/마감 시각은 API 날짜만으로 추측하지 않습니다. 구독 캘린더 알림을 제거하는 옵션이 켜져 있으면 알림이 안 올 수 있으며, Apple의 갱신/알림 정책에 따라 표시가 달라집니다. 설정 후 실제 기기에서 확인하세요.
-
-## 로컬 실행 (선택)
-
-프로젝트 폴더 안에서:
-
-```sh
-python3 -m unittest discover -s tests -v
-python3 calendar_builder.py --demo --output demo-site
-```
-
-실데이터 실행 시 환경변수 `DATA_GO_KR_SERVICE_KEY`를 설정한 뒤:
-
-```sh
-python3 calendar_builder.py --output site
-```
-
-프로그램은 `.env`를 읽지 않습니다. 키를 코드나 터미널 명령 이력에 직접 적기보다 GitHub Secrets를 권장합니다. `site`에는 `calendar.ics`, `index.html`, `status.json`, `.nojekyll`이 생성됩니다. Pages는 이 폴더만 공개하며 원본 응답이나 인증키는 배포하지 않습니다.
-
-## 갱신 방식과 한계
-
-- 두 API를 매번 전체 페이지 조회합니다. 모집공고일 기준 짧은 기간만 조회해 예전 공고의 변경을 놓치는 일을 줄입니다. 페이지당 100건, API당 최대 500페이지입니다. 실제 승인된 호출 한도 내에서 사용하세요.
-- 매 수집 결과로 완전히 재생성합니다. 원본에서 사라진 공고는 다음 구독 갱신에서 빠집니다. API가 변경·취소를 반영하지 않으면 이 프로젝트도 이를 알 수 없습니다. 데이터가 수집 중 변경되어 건수가 맞지 않으면 실패 처리 후 재실행합니다.
-- 완료 후 365일 지난 일정은 출력에서 빠집니다. 미래 일정은 유지합니다. 동일 공고+일정 유형은 날짜가 바뀌어도 같은 UID이므로 구독에서 수정으로 인식할 수 있습니다.
-- 세부 1·2순위 날짜가 있으면 각각 표시합니다. 없으면 전체 접수기간을 '세부 구분 원문 확인'으로 표시하며 일반공급 날짜라고 추측하지 않습니다. 특별공급 세부 자격별 기관추천 사전접수일은 별도 수집하지 않습니다.
-- 대상 지역이라도 분양 코드가 없거나 허용되지 않은 유형이면 제외합니다. `status.json`에서 원본 건수와 제외 건수를 확인하세요. 일정이 0개인 결과도 가능하며, 0개가 모든 공고가 없다는 보장은 아닙니다.
-- 공식 API 명세는 확인했지만 **인증키를 사용한 실제 요청은 아직 검증하지 않았습니다.** 첫 Run workflow의 성공과 공식 공고와의 대조 확인이 남아 있습니다.
-
-출처·필드: [docs/SOURCES.md](docs/SOURCES.md). 수동 보완: [docs/MANUAL.md](docs/MANUAL.md). 문제 해결: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+로컬 검증: `python3 -m unittest discover -s tests -v`.
