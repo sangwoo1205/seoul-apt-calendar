@@ -1,3 +1,16 @@
+name: Update apartment calendar
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *' # UTC 00:00 = 한국시간 09:00. 실행 지연 가능.
+permissions:
+  contents: read
+concurrency:
+  group: apartment-calendar-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
