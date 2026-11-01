@@ -135,7 +135,8 @@ def normalize(endpoint, rows, counts):
                 not apt and code not in ('04', '06')):
             counts['excluded_tenure_or_type'] += 1
             continue
-        if any('임대' in text(row, k) for k in ('HOUSE_NM', 'RENT_SECD_NM', 'HOUSE_SECD_NM')):
+        if any('임대' in re.sub(r'토지\s*임대부\s*분양', '분양', text(row, k))
+               for k in ('HOUSE_NM', 'RENT_SECD_NM', 'HOUSE_SECD_NM')):
             counts['excluded_rental_text'] += 1
             continue
         if not text(row, 'HOUSE_NM') or not text(row, 'PBLANC_NO') or not text(row, 'HOUSE_MANAGE_NO'):
@@ -191,7 +192,8 @@ def manual_events(path):
         seen.add(identity)
         base = {'id': 'manual:' + identity, 'name': row['name'], 'address': row['address'],
                 'supply': row.get('supply', '공공/민간 분양'), 'source': '공식 공고 수동 확인',
-                'url': official_url(row['source_url']), 'note': '사용자가 공식 원문에서 확인한 일정'}
+                'url': official_url(row['source_url']),
+                'note': '공식 원문 확인 일정. ' + row.get('note', '')}
         kinds = set()
         for event in row['events']:
             kind = event['kind']
@@ -256,14 +258,14 @@ def build(output, events, counts, now, mode):
     output.mkdir(parents=True, exist_ok=True)
     (output / 'calendar.ics').write_bytes(data)
     status = {'mode': mode, 'updated_at': now.isoformat(), 'event_count': len(events), 'counts': dict(counts),
-              'coverage': '청약홈 APT/잔여세대 + 공식 원문 수동 입력. LH/SH/GH 자체 공고 전수 자동수집 아님.'}
+              'coverage': '청약홈 APT/잔여세대 + LH(ENABLE_LH=true일 때, 최근 2년 공고) + 공식 원문 수동 입력. SH/GH 자체 공고 전수 자동수집 아님.'}
     (output / 'status.json').write_text(json.dumps(status, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     title = '테스트 예시 — 실제 공고 아님' if mode == 'demo' else '서울·성남 아파트 분양 청약'
     (output / 'index.html').write_text('<!doctype html><html lang="ko"><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width"><title>' + title + '</title><body><h1>' + title + '</h1>'
         '<p><a href="calendar.ics">Apple Calendar 구독용 ICS</a></p><p>최종 수집 성공: ' + html.escape(now.isoformat()) + '</p>'
         '<p>일정 ' + str(len(events)) + '개. <a href="status.json">수집 상태</a></p>'
-        '<p>청약홈 등록 공고와 수동 확인 공고를 제공합니다. LH·SH·GH 자체 공고를 모두 자동 수집하지 않습니다.</p>'
+        '<p>청약홈 등록 공고와 수동 확인 공고를 제공합니다. LH는 별도 활성화 시 공식 API로 수집합니다. SH·GH 자체 공고는 전체 자동 수집되지 않습니다.</p>'
         '<p>실제 접수 시간·자격·변경 사항은 공식 모집공고문을 확인하세요. API 장애 시 마지막 성공 결과가 유지됩니다.</p></body></html>', encoding='utf-8')
     (output / '.nojekyll').touch()
     return len(events)
@@ -290,7 +292,21 @@ def main():
         for endpoint in ENDPOINTS:
             counts[endpoint + '_fetched'] = len(raw[endpoint])
             events.extend(normalize(endpoint, raw[endpoint], counts))
-        events.extend(manual_events(args.manual))
+        # 명시한 주택관리번호가 자동 수집 결과에 있으면 같은 수동 공고는 중복 추가하지 않음.
+        manual_rows = json.loads(Path(args.manual).read_text(encoding='utf-8'))
+        manual = manual_events(args.manual)
+        skip_ids = {'manual:' + row['id'] for row in manual_rows
+                    if row.get('house_manage_no') and any(
+                        e['id'].startswith(ENDPOINTS[0] + ':' + str(row['house_manage_no']) + ':')
+                        for e in events)}
+        counts['manual_notices_already_in_applyhome'] = len(skip_ids)
+        events.extend(e for e in manual if e['id'] not in skip_ids)
+        lh_enabled = os.environ.get('ENABLE_LH', '').strip().lower() == 'true'
+        if lh_enabled and not args.demo:
+            from lh_source import collect
+            today_kst = datetime.now(timezone(timedelta(hours=9))).date()
+            events.extend(collect(key, today_kst, sys.modules[__name__], counts))
+        counts['lh_enabled'] = int(lh_enabled and not args.demo)
         count = build(args.output, events, counts, datetime.now(timezone.utc), 'demo' if args.demo else 'live')
         print(f'완료: {count}개 일정 → {args.output}/calendar.ics')
     except BuildError as exc:
