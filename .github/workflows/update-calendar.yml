@@ -29,6 +29,7 @@ jobs:
       - name: Collect official data and generate ICS
         env:
           DATA_GO_KR_SERVICE_KEY: ${{ secrets.DATA_GO_KR_SERVICE_KEY }}
+          ENABLE_LH: ${{ vars.ENABLE_LH }}
         run: python calendar_builder.py --output site
 
       - uses: actions/configure-pages@v5
