@@ -176,8 +176,9 @@ def normalize(endpoint, rows, counts):
     return events
 
 
-def manual_events(path):
-    records = json.loads(Path(path).read_text(encoding='utf-8'))
+def manual_events(path, records=None):
+    if records is None:
+        records = json.loads(Path(path).read_text(encoding='utf-8'))
     if not isinstance(records, list):
         raise BuildError('수동 공고 파일은 JSON 배열이어야 합니다.')
     events, seen = [], set()
@@ -191,7 +192,7 @@ def manual_events(path):
             raise BuildError('수동 공고 ID 중복/필수값 누락.')
         seen.add(identity)
         base = {'id': 'manual:' + identity, 'name': row['name'], 'address': row['address'],
-                'supply': row.get('supply', '공공/민간 분양'), 'source': '공식 공고 수동 확인',
+                'supply': row.get('supply', '공공/민간 분양'), 'source': row.get('source', '공식 공고 수동 확인'),
                 'url': official_url(row['source_url']),
                 'note': '공식 원문 확인 일정. ' + row.get('note', '')}
         kinds = set()
@@ -258,14 +259,14 @@ def build(output, events, counts, now, mode):
     output.mkdir(parents=True, exist_ok=True)
     (output / 'calendar.ics').write_bytes(data)
     status = {'mode': mode, 'updated_at': now.isoformat(), 'event_count': len(events), 'counts': dict(counts),
-              'coverage': '청약홈 APT/잔여세대 + LH(ENABLE_LH=true일 때, 최근 2년 공고) + 공식 원문 수동 입력. SH/GH 자체 공고 전수 자동수집 아님.'}
+              'coverage': '청약홈 + LH(별도 활성화 시 최근 2년 공고) + SH(별도 활성화 시 최근 2년 모집공고 본문) + 수동 공고. GH 전수 자동수집 아님.'}
     (output / 'status.json').write_text(json.dumps(status, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     title = '테스트 예시 — 실제 공고 아님' if mode == 'demo' else '서울·성남 아파트 분양 청약'
     (output / 'index.html').write_text('<!doctype html><html lang="ko"><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width"><title>' + title + '</title><body><h1>' + title + '</h1>'
         '<p><a href="calendar.ics">Apple Calendar 구독용 ICS</a></p><p>최종 수집 성공: ' + html.escape(now.isoformat()) + '</p>'
         '<p>일정 ' + str(len(events)) + '개. <a href="status.json">수집 상태</a></p>'
-        '<p>청약홈 등록 공고와 수동 확인 공고를 제공합니다. LH는 별도 활성화 시 공식 API로 수집합니다. SH·GH 자체 공고는 전체 자동 수집되지 않습니다.</p>'
+        '<p><a href="sh_review.json">SH 확인 대상(수집 활성화 시)</a></p><p>청약홈 등록 공고와 추가 수집 공고를 제공합니다. LH는 공식 API, SH는 활성화 시 최근 2년 모집공고 본문을 자동 수집합니다. 첨부파일에만 있는 일정과 GH는 포함되지 않을 수 있습니다.</p>'
         '<p>실제 접수 시간·자격·변경 사항은 공식 모집공고문을 확인하세요. API 장애 시 마지막 성공 결과가 유지됩니다.</p></body></html>', encoding='utf-8')
     (output / '.nojekyll').touch()
     return len(events)
@@ -307,7 +308,25 @@ def main():
             today_kst = datetime.now(timezone(timedelta(hours=9))).date()
             events.extend(collect(key, today_kst, sys.modules[__name__], counts))
         counts['lh_enabled'] = int(lh_enabled and not args.demo)
+        sh_report = None
+        sh_enabled = os.environ.get('ENABLE_SH', '').strip().lower() == 'true' and not args.demo
+        if sh_enabled:
+            from sh_source import collect as collect_sh
+            sh_rows, sh_report = collect_sh(sys.modules[__name__], counts)
+            sh_events = manual_events(None, sh_rows)
+            sh_ids = {event['id'] for event in sh_events}
+            manage_numbers = {str(row['house_manage_no']) for row in sh_rows if row.get('house_manage_no')}
+            old_manual_ids = {'manual:sh-312005'} | {'manual:' + row['id'] for row in manual_rows
+                              if str(row.get('house_manage_no', '')) in manage_numbers}
+            events = [event for event in events
+                      if event['id'] not in sh_ids | old_manual_ids
+                      and not any(event['id'].startswith(ENDPOINTS[0] + ':' + number + ':')
+                                  for number in manage_numbers)]
+            events.extend(sh_events)
+        counts['sh_enabled'] = int(sh_enabled)
         count = build(args.output, events, counts, datetime.now(timezone.utc), 'demo' if args.demo else 'live')
+        if sh_report is not None:
+            Path(args.output, 'sh_review.json').write_text(json.dumps(sh_report, ensure_ascii=False, indent=2)+'\n', encoding='utf-8')
         print(f'완료: {count}개 일정 → {args.output}/calendar.ics')
     except BuildError as exc:
         print('생성 실패: ' + str(exc) + ' 기존 배포는 유지됩니다.', file=sys.stderr)
